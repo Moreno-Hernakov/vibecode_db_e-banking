@@ -349,11 +349,11 @@ END //
 
 -- Trigger Log In Gagal: Increment Attempts & Lock Account
 CREATE TRIGGER trg_login_failed AFTER INSERT ON h_login_log
-FOR EACH ROW 
+FOR EACH ROW
 BEGIN
     IF NEW.status = 'FAILED' THEN
         UPDATE m_user
-        SET 
+        SET
             failed_attempts = failed_attempts + 1,
             last_failed_login = NOW(),
             status = CASE
@@ -368,9 +368,62 @@ END //
 DELIMITER ;
 
 -- =============================================================================
--- 9. EXAMPLE USAGE QUERIES (FOR TESTING)
+-- 9. VIEWS - DATABASE: dsi_mb_srd
 -- =============================================================================
+USE dsi_mb_srd;
 
+-- View Portfolio Nasabah: Ringkasan total saldo per nasabah
+CREATE OR REPLACE VIEW vw_customer_portfolio AS
+SELECT 
+    mc.cif_number,
+    mc.customer_name,
+    COUNT(ma.account_number) AS total_accounts,
+    SUM(ma.balance) AS total_balance,
+    CASE 
+        WHEN mc.classification = 1 THEN 'REGULER'
+        WHEN mc.classification = 2 THEN 'GOLD'
+        ELSE 'UNKNOWN'
+    END AS classification_name
+FROM m_customer mc
+LEFT JOIN m_account ma ON mc.cif_number = ma.cif_number
+GROUP BY mc.cif_number, mc.customer_name, mc.classification;
+
+-- View Laporan Transaksi Harian: Detail transaksi yang lebih informatif
+CREATE OR REPLACE VIEW vw_daily_transaction_report AS
+SELECT 
+    t.transaction_date,
+    t.reference_number,
+    mc.customer_name,
+    mf.feature_name,
+    t.transaction_amount AS amount,
+    t.fee,
+    t.status,
+    mr.response_message
+FROM t_transaction t
+JOIN m_customer mc ON t.cif_number = mc.cif_number
+JOIN m_feature mf ON t.feature_code = mf.feature_code
+JOIN m_response_code mr ON t.response_code = mr.response_code
+WHERE DATE(t.transaction_date) = CURDATE();
+
+-- =============================================================================
+-- 10. VIEWS - DATABASE: authentication
+-- =============================================================================
+USE authentication;
+
+-- View Status Keamanan User: Monitoring akun locked/bermasalah
+CREATE OR REPLACE VIEW vw_user_security_status AS
+SELECT 
+    u.username,
+    u.cif_number,
+    u.status,
+    u.failed_attempts,
+    u.last_failed_login,
+    (SELECT MAX(created) FROM h_login_log l WHERE l.cif_number = u.cif_number AND l.status = 'SUCCESS') AS last_login_success
+FROM m_user u;
+
+-- =============================================================================
+-- 11. EXAMPLE USAGE QUERIES (FOR TESTING)
+-- =============================================================================
 /*
 -- A. VIEW: Cek transaksi seminggu terakhir
 SELECT * FROM dsi_mb_srd.lihat_transaksi;
