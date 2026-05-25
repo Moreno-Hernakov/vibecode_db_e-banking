@@ -34,9 +34,11 @@ erDiagram
         bigint id PK
         varchar username UK
         varchar password
-        varchar cif_number FK
+        varchar cif_number UK
         varchar status
         int failed_attempts
+        timestamp last_failed_login
+        timestamp suspend_until
         timestamp created
         timestamp updated
     }
@@ -50,7 +52,7 @@ erDiagram
 
     h_login_log {
         bigint id PK
-        varchar username
+        varchar cif_number
         timestamp login_time
         varchar ip_address
         varchar device_id
@@ -166,6 +168,12 @@ Prosedur otomatis untuk menangani proses login yang aman:
 - **Auto-Lock:** Jika salah password 3x berturut-turut, sistem otomatis mengubah status user menjadi `LOCKED`.
 - **Attempt Counter:** Melacak jumlah kegagalan login secara *real-time*.
 
+### 4.2. `sp_fund_transfer`
+Logika inti transaksi finansial antar rekening:
+- **Daily Limit Enforcement:** Validasi transaksi berdasarkan limit harian fitur dan kasta nasabah.
+- **Atomicity:** Memastikan mutasi saldo pengirim dan penerima terjadi secara utuh (Atomic Transaction).
+- **ISO 8583 Response:** Mengembalikan kode respon standar industri (00, 51, 61, 14, 99).
+
 ---
 
 ## 5. Panduan Sidang (Enterprise Standard FAQ)
@@ -189,12 +197,14 @@ CREATE TABLE authentication.m_user (
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     cif_number VARCHAR(20) UNIQUE NOT NULL,
-    status VARCHAR(20) DEFAULT 'ACTIVE'
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    failed_attempts INT DEFAULT 0
 ) ENGINE=InnoDB;
 
 -- Database dsi_mb_srd (Core Business)
 CREATE TABLE dsi_mb_srd.m_customer (
-    cif_number VARCHAR(20) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    cif_number VARCHAR(20) UNIQUE NOT NULL,
     customer_name VARCHAR(100) NOT NULL,
     classification INT DEFAULT 1,
     client_pin VARCHAR(255) NOT NULL

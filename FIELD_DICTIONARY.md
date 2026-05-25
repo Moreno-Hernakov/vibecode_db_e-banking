@@ -44,11 +44,16 @@ Dokumen ini berisi penjelasan detail mengenai setiap field dalam database projec
 ### 1. Tabel `m_customer` (Master Nasabah)
 | Field | Tipe Data | Penjelasan |
 | :--- | :--- | :--- |
-| `cif_number` | VARCHAR(20) (PK) | ID Unik Nasabah (CIF = Customer Information File). |
+| `id` | BIGINT (PK) | ID unik internal sistem (Auto Increment). |
+| `cif_number` | VARCHAR(20) (UK) | **Logical Business Key**. ID Unik Nasabah (CIF = Customer Information File). |
 | `customer_name` | VARCHAR(100) | Nama lengkap nasabah sesuai identitas. |
+| `customer_phone` | VARCHAR(20) | Nomor telepon aktif nasabah. |
+| `customer_email` | VARCHAR(100) | Alamat email nasabah. |
 | `classification` | INT | Kasta nasabah (1: Reguler, 2: Gold, 3: Platinum). |
 | `client_pin` | VARCHAR(255) | PIN khusus untuk otorisasi transaksi finansial. |
+| `need_authorized_unblock` | BOOLEAN | Flag jika akun butuh unblock manual oleh supervisor. |
 | `created` | TIMESTAMP | Waktu profil nasabah dibuat. |
+| `updated` | TIMESTAMP | Waktu terakhir data profil di-update. |
 
 ### 2. Tabel `m_account` (Master Rekening)
 | Field | Tipe Data | Penjelasan |

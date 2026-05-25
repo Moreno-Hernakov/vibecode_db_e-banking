@@ -281,6 +281,61 @@ BEGIN
     END IF;
 END //
 
+-- Procedure Ganti Password (Standard PCI-DSS: Anti-Reuse)
+CREATE PROCEDURE sp_change_password(
+    IN p_username VARCHAR(50),
+    IN p_old_password VARCHAR(255),
+    IN p_new_password VARCHAR(255),
+    OUT r_response_code VARCHAR(5)
+)
+BEGIN
+    DECLARE v_current_password VARCHAR(255);
+    DECLARE v_history_count INT;
+
+    -- Error Handler: Rollback jika ada SQL Exception
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET r_response_code = '99'; -- System Error
+    END;
+
+    -- 1. Ambil password yang sekarang aktif
+    SELECT password INTO v_current_password 
+    FROM m_user WHERE username = p_username;
+
+    -- 2. Validasi User & Password Lama
+    IF v_current_password IS NULL THEN
+        SET r_response_code = '01'; -- User Tidak Ditemukan
+    ELSEIF v_current_password != p_old_password THEN
+        SET r_response_code = '01'; -- Password Lama Salah
+    ELSE
+        -- 3. Cek History Password (Anti-Reuse)
+        -- User nggak boleh pake password yang sama dengan yang sekarang atau yang ada di history
+        SELECT COUNT(*) INTO v_history_count 
+        FROM m_password_history 
+        WHERE username = p_username AND password_hash = p_new_password;
+
+        IF v_history_count > 0 OR v_current_password = p_new_password THEN
+            SET r_response_code = '02'; -- Password Pernah Digunakan
+        ELSE
+            -- 4. Eksekusi Ganti Password (Atomic)
+            START TRANSACTION;
+            
+            -- Pindahkan password lama ke history
+            INSERT INTO m_password_history (username, password_hash)
+            VALUES (p_username, v_current_password);
+            
+            -- Update password baru di tabel utama
+            UPDATE m_user 
+            SET password = p_new_password, updated = NOW() 
+            WHERE username = p_username;
+            
+            COMMIT;
+            SET r_response_code = '00'; -- Sukses
+        END IF;
+    END IF;
+END //
+
 DELIMITER ;
 
 -- =============================================================================
@@ -324,6 +379,163 @@ BEGIN
     JOIN m_customer mc ON mc.cif_number = t.cif_number
     WHERE DATE(t.transaction_date) = CURDATE()
     GROUP BY mc.cif_number, mc.customer_name;
+END //
+
+-- Procedure Registrasi Nasabah Baru (Atomic & Secure)
+CREATE PROCEDURE sp_register_customer(
+    IN p_customer_name VARCHAR(100),
+    IN p_customer_phone VARCHAR(20),
+    IN p_customer_email VARCHAR(100),
+    IN p_client_pin VARCHAR(255),
+    IN p_username VARCHAR(50),
+    IN p_password VARCHAR(255),
+    OUT r_response_code VARCHAR(5),
+    OUT r_cif_number VARCHAR(20)
+)
+BEGIN
+    DECLARE v_new_id BIGINT;
+    DECLARE v_new_cif VARCHAR(20);
+    
+    -- Error Handler: Rollback jika ada SQL Exception
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET r_response_code = '99'; -- System Error
+        SET r_cif_number = NULL;
+    END;
+
+    START TRANSACTION;
+
+    -- 1. Insert ke Master Customer (Temporary CIF)
+    INSERT INTO m_customer (customer_name, customer_phone, customer_email, cif_number, client_pin)
+    VALUES (p_customer_name, p_customer_phone, p_customer_email, 'TEMP_CIF', p_client_pin);
+
+    -- 2. Ambil ID yang barusan digenerate & buat CIF_NUMBER
+    SET v_new_id = LAST_INSERT_ID();
+    SET v_new_cif = CONCAT('CIF', LPAD(v_new_id, 6, '0'));
+
+    -- 3. Update CIF_NUMBER yang bener di Customer
+    UPDATE m_customer SET cif_number = v_new_cif WHERE id = v_new_id;
+
+    -- 4. Insert ke Authentication Database
+    INSERT INTO authentication.m_user (username, password, cif_number, status)
+    VALUES (p_username, p_password, v_new_cif, 'ACTIVE');
+
+    COMMIT;
+
+    SET r_response_code = '00'; -- Success
+    SET r_cif_number = v_new_cif;
+END //
+
+-- Procedure Transfer Dana (Internal & Atomic)
+CREATE PROCEDURE sp_fund_transfer(
+    IN p_from_account VARCHAR(20),
+    IN p_to_account VARCHAR(20),
+    IN p_amount DECIMAL(15, 2),
+    IN p_feature_code VARCHAR(10),
+    IN p_cif_number VARCHAR(20),
+    IN p_ip_address VARCHAR(50),
+    OUT r_response_code VARCHAR(5),
+    OUT r_reference_number VARCHAR(50)
+)
+BEGIN
+    DECLARE v_from_balance DECIMAL(15, 2);
+    DECLARE v_from_status VARCHAR(20);
+    DECLARE v_to_status VARCHAR(20);
+    DECLARE v_fee DECIMAL(15, 2);
+    DECLARE v_classification INT;
+    DECLARE v_daily_limit DECIMAL(15, 2);
+    DECLARE v_total_today DECIMAL(15, 2);
+    DECLARE v_ref_no VARCHAR(50);
+    
+    -- Error Handler: Rollback jika ada SQL Exception
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET r_response_code = '99'; -- System Error
+    END;
+
+    -- Generate Reference Number (Simulasi: TRX + Timestamp + Random)
+    SET v_ref_no = CONCAT('TRX-', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), '-', LPAD(FLOOR(RAND() * 1000), 3, '0'));
+    SET r_reference_number = v_ref_no;
+
+    -- 1. Get Initial Data & Validation
+    SELECT balance, status INTO v_from_balance, v_from_status 
+    FROM m_account WHERE account_number = p_from_account;
+    
+    SELECT status INTO v_to_status 
+    FROM m_account WHERE account_number = p_to_account;
+    
+    SELECT fee INTO v_fee 
+    FROM m_feature WHERE feature_code = p_feature_code;
+    
+    SELECT classification INTO v_classification 
+    FROM m_customer WHERE cif_number = p_cif_number;
+
+    -- 2. Business Rules Validation
+    IF v_from_status IS NULL OR v_to_status IS NULL THEN
+        SET r_response_code = '14'; -- Invalid Account
+    ELSEIF v_from_status != 'ACTIVE' OR v_to_status != 'ACTIVE' THEN
+        SET r_response_code = '14'; -- Account Blocked/Inactive
+    ELSEIF v_from_balance < (p_amount + v_fee) THEN
+        SET r_response_code = '51'; -- Insufficient Fund
+    ELSE
+        -- 3. Daily Limit Validation
+        SELECT limit_amount INTO v_daily_limit 
+        FROM m_limit 
+        WHERE feature_code = p_feature_code AND classification = v_classification;
+
+        SELECT IFNULL(SUM(transaction_amount), 0) INTO v_total_today 
+        FROM t_transaction 
+        WHERE cif_number = p_cif_number 
+        AND feature_code = p_feature_code 
+        AND transaction_status = 'SUCCESS'
+        AND DATE(transaction_date) = CURDATE();
+
+        IF (v_total_today + p_amount) > v_daily_limit THEN
+            SET r_response_code = '61'; -- Exceeds Daily Limit
+        ELSE
+            -- 4. Execution (Atomic)
+            START TRANSACTION;
+            
+            -- Potong Saldo Pengirim
+            UPDATE m_account 
+            SET balance = balance - (p_amount + v_fee) 
+            WHERE account_number = p_from_account;
+            
+            -- Tambah Saldo Penerima
+            UPDATE m_account 
+            SET balance = balance + p_amount 
+            WHERE account_number = p_to_account;
+            
+            -- Catat Transaksi
+            INSERT INTO t_transaction (
+                reference_number, cif_number, from_account_number, customer_reference, 
+                transaction_amount, fee, transaction_status, feature_code, 
+                response_code, ipaddress, location
+            ) VALUES (
+                v_ref_no, p_cif_number, p_from_account, p_to_account, 
+                p_amount, v_fee, 'SUCCESS', p_feature_code, 
+                '00', p_ip_address, 'MOBILE-APPS'
+            );
+            
+            COMMIT;
+            SET r_response_code = '00'; -- Success
+        END IF;
+    END IF;
+
+    -- Jika Gagal (selain System Error 99), tetap catat sebagai Failed Transaction
+    IF r_response_code != '00' AND r_response_code != '99' THEN
+        INSERT INTO t_transaction (
+            reference_number, cif_number, from_account_number, customer_reference, 
+            transaction_amount, fee, transaction_status, feature_code, 
+            response_code, ipaddress, location
+        ) VALUES (
+            v_ref_no, p_cif_number, p_from_account, p_to_account, 
+            p_amount, IFNULL(v_fee, 0), 'FAILED', p_feature_code, 
+            r_response_code, p_ip_address, 'MOBILE-APPS'
+        );
+    END IF;
 END //
 
 DELIMITER ;
