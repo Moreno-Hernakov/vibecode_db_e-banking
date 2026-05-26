@@ -13,7 +13,7 @@ Dokumen ini mencatat status implementasi logic database (Stored Procedures, Trig
 - [x] **`sp_change_password`**: Ganti password dengan validasi history (Anti-reuse).
 - [x] **`sp_mutasi`**: Menarik history transaksi hari ini.
 - [x] **`sp_tutup_buku`**: Rekapitulasi transaksi harian.
-- [ ] **`sp_generate_reference`**: Dedicated generator nomor referensi transaksi unik.
+- [x] **`sp_generate_reference`**: Dedicated generator nomor referensi transaksi unik.
 - [~] *`sp_create_user` & `sp_create_customer` (Legacy: Digantikan oleh `sp_register_customer`)*.
 
 ---
