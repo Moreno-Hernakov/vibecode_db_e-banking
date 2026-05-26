@@ -427,6 +427,20 @@ BEGIN
     SET r_cif_number = v_new_cif;
 END //
 
+-- Procedure Generator Nomor Referensi (Standardized Format)
+CREATE PROCEDURE sp_generate_reference(
+    IN p_prefix VARCHAR(10),
+    OUT r_reference_number VARCHAR(50)
+)
+BEGIN
+    -- Format: PREFIX-YYYYMMDDHHMMSS-RAND(3)
+    SET r_reference_number = CONCAT(
+        p_prefix, '-', 
+        DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), '-', 
+        LPAD(FLOOR(RAND() * 1000), 3, '0')
+    );
+END //
+
 -- Procedure Transfer Dana (Internal & Atomic)
 CREATE PROCEDURE sp_fund_transfer(
     IN p_from_account VARCHAR(20),
@@ -455,8 +469,8 @@ BEGIN
         SET r_response_code = '99'; -- System Error
     END;
 
-    -- Generate Reference Number (Simulasi: TRX + Timestamp + Random)
-    SET v_ref_no = CONCAT('TRX-', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), '-', LPAD(FLOOR(RAND() * 1000), 3, '0'));
+    -- Generate Reference Number via SP
+    CALL sp_generate_reference('TRX', v_ref_no);
     SET r_reference_number = v_ref_no;
 
     -- 1. Get Initial Data & Validation
