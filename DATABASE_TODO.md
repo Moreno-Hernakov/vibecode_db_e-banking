@@ -23,8 +23,8 @@ Dokumen ini mencatat status implementasi logic database (Stored Procedures, Trig
 
 - [x] **`trg_login_success`**: Reset failed attempts saat login berhasil.
 - [x] **`trg_login_failed`**: Increment attempts & auto-lock akun (3x gagal).
-- [ ] **`trg_audit_customer`**: Log setiap perubahan data nasabah ke `h_audit_trail`.
-- [ ] **`trg_audit_account`**: Log perubahan data/status rekening ke `h_audit_trail`.
+- [x] **`trg_audit_customer`**: Log setiap perubahan data nasabah ke `h_audit_trail`.
+- [x] **`trg_audit_account`**: Log perubahan data/status rekening ke `h_audit_trail`.
 - [ ] **`trg_update_balance`**: Sinkronisasi saldo otomatis setelah transaksi (Opsional).
 
 ---
@@ -32,9 +32,9 @@ Dokumen ini mencatat status implementasi logic database (Stored Procedures, Trig
 ## 🛠️ Functions (Utility & Formatting)
 *Logic pendukung untuk pengolahan nilai atau tampilan.*
 
-- [ ] **`fn_format_idr`**: Ubah angka `DECIMAL` jadi format Rupiah (e.g., Rp 1.500.000).
-- [ ] **`fn_mask_account`**: Sensor nomor rekening (e.g., 123xxxx890) untuk PII handling.
-- [ ] **`fn_get_current_balance`**: Shortcut ambil saldo terakhir rekening tertentu.
+- [x] **`fn_format_idr`**: Ubah angka `DECIMAL` jadi format Rupiah (e.g., Rp 1.500.000).
+- [x] **`fn_mask_account`**: Sensor nomor rekening (e.g., 123xxxx890) untuk PII handling.
+- [x] **`fn_get_current_balance`**: Shortcut ambil saldo terakhir rekening tertentu.
 
 ---
 
@@ -47,4 +47,4 @@ Dokumen ini mencatat status implementasi logic database (Stored Procedures, Trig
 - [x] **`vw_user_security_status`**: Monitoring user locked/bermasalah.
 
 ---
-*Terakhir diupdate: Sab, 23 Mei 2026 oleh Gemini CLI.*
+*Terakhir diupdate: Rabu, 27 Mei 2026 oleh Gemini CLI.*
