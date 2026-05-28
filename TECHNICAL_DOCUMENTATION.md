@@ -105,6 +105,12 @@ Di sini kita bedah semua tabel (total 11 tabel) yang ada di sistem kita. Gak bol
 *   **`fn_format_idr`**: Tukang bungkus angka biar jadi format Rupiah (e.g., Rp 1.000.000).
 *   **`fn_mask_account`**: Tukang sensor biar nomor rekening lu gak kelihatan full (e.g., 123xxxx89).
 
+### 📊 Views (Laporan Otomatis)
+*   **`vw_lihat_transaksi`**: Monitoring transaksi seminggu terakhir. Biar lu tau duit lu lari ke mana aja selama 7 hari ke belakang.
+*   **`vw_customer_portfolio`**: Ringkasan kekayaan nasabah. Lu bisa liat total saldo dari semua rekening yang lu punya dalam satu baris.
+*   **`vw_daily_transaction_report`**: Laporan harian buat bank. Isinya rekap transaksi yang terjadi hari ini (siapa, beli apa, nominalnya berapa).
+*   **`vw_user_security_status`**: Monitoring keamanan. Satpam digital yang nge-list siapa aja user yang lagi di-lock atau bermasalah.
+
 ---
 
 ## 🚩 5. TABEL KODE RESPON (Status Transaksi)
