@@ -44,9 +44,9 @@ Agar sesuai dengan pengalaman real-world lu di industri banking, setiap implemen
 ## 🤝 Team Collaboration & Audit
 Project ini dikerjakan oleh tim yang terdiri dari **2 orang**. Untuk menjaga integritas data dan kemudahan debugging, aturan berikut wajib diikuti:
 1.  **Strict Audit Logging:** Kolom `created_by` dan `updated_by` wajib diisi dengan inisial atau nama anggota tim yang melakukan perubahan data (bukan sekadar 'SYSTEM').
-2.  **Shared Memory:** Segala perubahan skema atau logic yang disepakati bersama harus segera diupdate ke `GEMINI.md` agar seluruh tim (dan gw sebagai asisten) tetap sinkron.
+2.  **Shared Memory:** Segala perubahan skema atau logic yang disepakati bersama harus segera diupdate ke `GEMINI.md` dan `TECHNICAL_DOCUMENTATION.md` agar seluruh tim (dan gw sebagai asisten) tetap sinkron.
 
 ## 💡 Prinsip Pengembangan
 - **CIF-Centric:** Nasabah diidentifikasi unik melalui `cif_number`.
 - **ISO 8583 Compliance:** Response code dan flow transaksi harus berkiblat pada standar perbankan.
-- **Surgical Update:** Setiap perubahan pada `.sql` harus dibarengi dengan update pada `BLUEPRINT.md`.
+- **Surgical Update:** Setiap perubahan pada `.sql` harus dibarengi dengan update pada `TECHNICAL_DOCUMENTATION.md`.

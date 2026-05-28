@@ -25,7 +25,6 @@ Dokumen ini mencatat status implementasi logic database (Stored Procedures, Trig
 - [x] **`trg_login_failed`**: Increment attempts & auto-lock akun (3x gagal).
 - [x] **`trg_audit_customer`**: Log setiap perubahan data nasabah ke `h_audit_trail`.
 - [x] **`trg_audit_account`**: Log perubahan data/status rekening ke `h_audit_trail`.
-- [ ] **`trg_update_balance`**: Sinkronisasi saldo otomatis setelah transaksi (Opsional).
 
 ---
 
@@ -47,4 +46,4 @@ Dokumen ini mencatat status implementasi logic database (Stored Procedures, Trig
 - [x] **`vw_user_security_status`**: Monitoring user locked/bermasalah.
 
 ---
-*Terakhir diupdate: Rabu, 27 Mei 2026 oleh Gemini CLI.*
+*Terakhir diupdate: Kamis, 28 Mei 2026 oleh Gemini CLI.*

@@ -140,7 +140,7 @@ CREATE TABLE h_audit_trail (
 USE dsi_mb_srd;
 
 -- View Lihat Transaksi Seminggu Sebelumnya
-CREATE OR REPLACE VIEW lihat_transaksi AS
+CREATE OR REPLACE VIEW vw_lihat_transaksi AS
 SELECT 
     t.cif_number,
     mc.customer_name,
@@ -374,7 +374,7 @@ BEGIN
     END IF;
 END //
 
-CREATE PROCEDURE mutasi(IN nomor_cif VARCHAR(20))
+CREATE PROCEDURE sp_mutasi(IN nomor_cif VARCHAR(20))
 BEGIN
     SELECT mc.cif_number, mc.customer_name, t.reference_number, t.transaction_amount,
            mf.fee, mr.response_message, t.transaction_date, t.location 
@@ -386,7 +386,7 @@ BEGIN
     ORDER BY t.transaction_date DESC;
 END //
 
-CREATE PROCEDURE tutup_buku()
+CREATE PROCEDURE sp_tutup_buku()
 BEGIN
     SELECT mc.cif_number, mc.customer_name, COUNT(*) AS 'Total', SUM(transaction_amount) AS 'Jumlah Transaksi' 
     FROM t_transaction t
