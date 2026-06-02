@@ -34,6 +34,7 @@ Dokumen ini berisi penjelasan detail mengenai setiap field dalam database projec
 | `login_time` | TIMESTAMP | Waktu eksekusi login. |
 | `ip_address` | VARCHAR(50) | Alamat IP perangkat yang digunakan. |
 | `device_id` | VARCHAR(100) | ID unik perangkat (misal: IPHONE-15, SM-G99). |
+| `user_agent` | TEXT | Informasi browser atau versi aplikasi nasabah. |
 | `status` | ENUM | Hasil login (`SUCCESS`, `FAILED`, `LOCKED`). |
 
 ---

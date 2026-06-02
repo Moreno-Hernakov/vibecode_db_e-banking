@@ -93,7 +93,7 @@ Di sini kita bedah semua tabel (total 11 tabel) yang ada di sistem kita. Gak bol
 ## 🤖 4. OTAK SISTEM (Logic Database)
 
 ### ⚙️ Stored Procedures (Instruksi Kerja)
-*   **`sp_login_user`**: Satpam yang ngecek kunci pintu lu.
+*   **`sp_login_user`**: Satpam yang ngecek kunci pintu lu. Sekarang makin pinter karena nyatet IP Address, Device ID, ama User Agent nasabah. Logika auditnya juga udah standar banking: sukses dicatat, salah password dicatat (buat trigger lock), dan akun yang emang udah ke-lock pun tetep dicatat percobaannya.
 *   **`sp_fund_transfer`**: Kasir yang mindahin duit antar brankas.
 *   **`sp_mutasi`**: Tukang rekap yang nyatet lu belanja apa aja hari ini.
 

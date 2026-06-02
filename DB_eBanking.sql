@@ -207,6 +207,9 @@ DELIMITER //
 CREATE PROCEDURE sp_login_user(
     IN p_username VARCHAR(50),
     IN p_password VARCHAR(255),
+    IN p_ip_address VARCHAR(50),
+    IN p_device_id VARCHAR(100),
+    IN p_user_agent TEXT,
     OUT r_response_code VARCHAR(5)
 )
 BEGIN
@@ -219,15 +222,19 @@ BEGIN
     FROM m_user WHERE username = p_username;
 
     IF v_status IS NULL THEN
-        SET r_response_code = "01"; -- Not Found
+        SET r_response_code = "01"; -- User Not Found
     ELSEIF v_status = "LOCKED" THEN
+        INSERT INTO h_login_log (cif_number, ip_address, device_id, user_agent, status) 
+        VALUES (v_cif, p_ip_address, p_device_id, p_user_agent, 'LOCKED');
         SET r_response_code = "02"; -- Locked
     ELSE
         IF v_db_password = p_password THEN
-            INSERT INTO h_login_log (cif_number, status) VALUES (v_cif, 'SUCCESS');
+            INSERT INTO h_login_log (cif_number, ip_address, device_id, user_agent, status) 
+            VALUES (v_cif, p_ip_address, p_device_id, p_user_agent, 'SUCCESS');
             SET r_response_code = "00";
         ELSE
-            INSERT INTO h_login_log (cif_number, status) VALUES (v_cif, 'FAILED');
+            INSERT INTO h_login_log (cif_number, ip_address, device_id, user_agent, status) 
+            VALUES (v_cif, p_ip_address, p_device_id, p_user_agent, 'FAILED');
             SET r_response_code = "03"; -- Wrong Password
         END IF;
     END IF;
@@ -414,9 +421,9 @@ CREATE TRIGGER trg_login_failed AFTER INSERT ON h_login_log FOR EACH ROW
 BEGIN
     IF NEW.status = 'FAILED' THEN
         UPDATE m_user 
-        SET failed_attempts = failed_attempts + 1, 
+        SET status = CASE WHEN failed_attempts + 1 >= 3 THEN 'LOCKED' ELSE status END,
+            failed_attempts = failed_attempts + 1, 
             last_failed_login = NOW(), 
-            status = CASE WHEN failed_attempts + 1 >= 3 THEN 'LOCKED' ELSE status END, 
             updated = NOW() 
         WHERE cif_number = NEW.cif_number;
     END IF;
